@@ -24,7 +24,7 @@ CREATE TABLE `accounts` (
   `amount` int(11) NOT NULL,
   UNIQUE KEY `name` (`name`,`charid`),
   KEY `FK_accounts` (`charid`),
-  CONSTRAINT `accounts_ibfk_1` FOREIGN KEY (`charid`) REFERENCES `YOUR_TABLE` (`YOUR_IDENTIFIER`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `accounts_ibfk_1` FOREIGN KEY (`charid`) REFERENCES `YOUR_TABLE` (`YOUR_IDENTIFIER`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB;
 ```
 

@@ -20,7 +20,7 @@ local accountData = setmetatable({}, {
 local Query = {
 	ACCOUNT_NAMES = 'SELECT UNIQUE name FROM accounts',
 	SELECT_ACCOUNTS = 'SELECT name, amount from accounts WHERE charid = ?',
-	UPDATE_ACCOUNT = 'INSERT INTO accounts (name, charid, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
+	UPDATE_ACCOUNT = 'INSERT INTO accounts (charid, name, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
 }
 
 ---@param source number server id to identify the player
@@ -28,10 +28,14 @@ local Query = {
 ---@return table<string, number> accounts
 function accounts.load(source, charid)
 	players[source] = charid
-
 	local result = MySQL.query.await(Query.SELECT_ACCOUNTS, { charid })
-	for _, account in pairs(result) do
-		accountData[charid][account.name] = account.amount
+
+	if next(result) then
+		for _, account in pairs(result) do
+			accountData[charid][account.name] = account.amount
+		end
+	else
+		accountData[charid] = {}
 	end
 end
 
@@ -41,13 +45,13 @@ end
 ---Leave account undefined to get a table of all accounts and amounts
 function accounts.get(source, account)
 	if source then
-		source = players[source]
+		local charid = players[source]
 
 		if account then
-			return accountData[source][account]
+			return accountData[charid][account]
 		end
 
-		return accountData[source]
+		return accountData[charid]
 	end
 end
 provideExport('get', accounts.get)
@@ -57,12 +61,12 @@ provideExport('get', accounts.get)
 ---@param amount number
 function accounts.add(source, account, amount)
 	if source then
-		source = players[source]
+		local charid = players[source]
 
-		if not accountData[source][account] then
-			accountData[source][account] = amount
+		if not accountData[charid][account] then
+			accountData[charid][account] = amount
 		else
-			accountData[source][account] += amount
+			accountData[charid][account] += amount
 		end
 	end
 end
@@ -73,12 +77,12 @@ provideExport('add', accounts.add)
 ---@param amount number
 function accounts.remove(source, account, amount)
 	if source then
-		source = players[source]
+		local charid = players[source]
 
-		if not accountData[source][account] then
-			accountData[source][account] = amount
+		if not accountData[charid][account] then
+			accountData[charid][account] = amount
 		else
-			accountData[source][account] -= amount
+			accountData[charid][account] -= amount
 		end
 	end
 end
@@ -89,17 +93,20 @@ provideExport('remove', accounts.remove)
 ---@param amount number
 function accounts.set(source, account, amount)
 	if source then
-		source = players[source]
-		accountData[source][account] = amount
+		local charid = players[source]
+		accountData[charid][account] = amount
 	end
 end
 provideExport('set', accounts.add)
 
 function accounts.save(source, account)
-	source = players[source]
-	local amount = accountData[source][account]
+	local charid = players[source]
+	local amount = accountData[charid][account]
 
-	MySQL.prepare(Query.UPDATE_ACCOUNT, { account, source, amount })
+	print(Query.UPDATE_ACCOUNT)
+	print(charid, account, amount)
+
+	MySQL.prepare(Query.UPDATE_ACCOUNT, { charid, account, amount })
 end
 provideExport('save', accounts.save)
 
@@ -108,26 +115,33 @@ function accounts.saveAll(source, remove)
 	local size = 0
 
 	if source then
-		source = players[source]
+		local charid = players[source]
+		print('accounts', json.encode(accountData[charid]))
 
-		for account, amount in pairs(accountData[source]) do
+		for account, amount in pairs(accountData[charid]) do
 			size += 1
-			parameters[size] = { account, source, amount }
+			parameters[size] = { charid, account, amount }
 		end
 
 		if remove then
 			accountData[source] = nil
 		end
 	else
+		print('allaccounts', json.encode(accountData))
 		for charid, data in pairs(accountData) do
+			print('accounts', json.encode(accountData[charid]))
 			for account, amount in pairs(data) do
 				size += 1
-				parameters[size] = { account, charid, amount }
+				parameters[size] = { charid, account, amount }
 			end
 		end
 	end
 
-	MySQL.prepare(Query.UPDATE_ACCOUNT, parameters)
+	print(json.encode(parameters))
+
+	if size > 0 then
+		MySQL.prepare(Query.UPDATE_ACCOUNT, parameters)
+	end
 end
 provideExport('saveAll', accounts.saveAll)
 
