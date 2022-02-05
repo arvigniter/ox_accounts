@@ -17,40 +17,28 @@ local accountData = setmetatable({}, {
 	end
 })
 
----@param name string
---- ```lua
---- exports.ox_accounts:registerAccount('fleeca')
---- ```
-function accounts.register(name)
-	accounts.list[name] = true
-end
-provideExport('registerAccount', accounts.register)
-
 local Query = {
 	ACCOUNT_NAMES = 'SELECT UNIQUE name FROM accounts',
 	SELECT_ACCOUNTS = 'SELECT name, amount from accounts WHERE charid = ?',
 	UPDATE_ACCOUNT = 'INSERT INTO accounts (name, charid, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
 }
 
-MySQL.ready(function()
-	for _, account in pairs(MySQL.query.await(Query.ACCOUNT_NAMES)) do
-		accounts.register(account.name)
-	end
-end)
-
+---@param source number server id to identify the player
+---@param charid number | string unique identifier used to reference the character in the database
+---@return table<string, number> accounts
 function accounts.load(source, charid)
 	players[source] = charid
 
 	local result = MySQL.query.await(Query.SELECT_ACCOUNTS, { charid })
 	for _, account in pairs(result) do
-		if not accounts.list[account.name] then
-			accounts.register(account.name)
-		end
-
 		accountData[charid][account.name] = account.amount
 	end
 end
 
+---@param source number server id to identify the player
+---@param account? string return the amount in the given account
+---@return number | table<string, number>
+---Leave account undefined to get a table of all accounts and amounts
 function accounts.get(source, account)
 	if source then
 		source = players[source]
@@ -61,11 +49,12 @@ function accounts.get(source, account)
 
 		return accountData[source]
 	end
-
-	return accounts.list
 end
 provideExport('get', accounts.get)
 
+---@param source number server id to identify the player
+---@param account string name of the account to adjust
+---@param amount number
 function accounts.add(source, account, amount)
 	if source then
 		source = players[source]
@@ -79,6 +68,9 @@ function accounts.add(source, account, amount)
 end
 provideExport('add', accounts.add)
 
+---@param source number server id to identify the player
+---@param account string name of the account to adjust
+---@param amount number
 function accounts.remove(source, account, amount)
 	if source then
 		source = players[source]
@@ -92,6 +84,9 @@ function accounts.remove(source, account, amount)
 end
 provideExport('remove', accounts.remove)
 
+---@param source number server id to identify the player
+---@param account string name of the account to adjust
+---@param amount number
 function accounts.set(source, account, amount)
 	if source then
 		source = players[source]
