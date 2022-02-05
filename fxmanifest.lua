@@ -14,5 +14,5 @@ description  'Standalone accounts management'
 --[[ Manifest ]]--
 server_scripts {
 	'@oxmysql/lib/MySQL.lua',
-    'server.lua'
+    'server/accounts.lua'
 }

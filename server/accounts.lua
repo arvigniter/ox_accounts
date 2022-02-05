@@ -28,8 +28,8 @@ provideExport('registerAccount', accounts.register)
 
 local Query = {
 	ACCOUNT_NAMES = 'SELECT UNIQUE name FROM accounts',
-	SELECT_ACCOUNTS = 'SELECT name, amount from accounts WHERE owner = ?',
-	UPDATE_ACCOUNT = 'INSERT INTO accounts (name, owner, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
+	SELECT_ACCOUNTS = 'SELECT name, amount from accounts WHERE charid = ?',
+	UPDATE_ACCOUNT = 'INSERT INTO accounts (name, charid, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
 }
 
 MySQL.ready(function()
@@ -38,16 +38,16 @@ MySQL.ready(function()
 	end
 end)
 
-function accounts.load(source, dbId)
-	players[source] = dbId
+function accounts.load(source, charid)
+	players[source] = charid
 
-	local result = MySQL.query.await(Query.SELECT_ACCOUNTS, { dbId })
+	local result = MySQL.query.await(Query.SELECT_ACCOUNTS, { charid })
 	for _, account in pairs(result) do
 		if not accounts.list[account.name] then
 			accounts.register(account.name)
 		end
 
-		accountData[dbId][account.name] = account.amount
+		accountData[charid][account.name] = account.amount
 	end
 end
 
@@ -124,10 +124,10 @@ function accounts.saveAll(source, remove)
 			accountData[source] = nil
 		end
 	else
-		for owner, data in pairs(accountData) do
+		for charid, data in pairs(accountData) do
 			for account, amount in pairs(data) do
 				size += 1
-				parameters[size] = { account, owner, amount }
+				parameters[size] = { account, charid, amount }
 			end
 		end
 	end
