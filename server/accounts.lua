@@ -103,9 +103,6 @@ function accounts.save(source, account)
 	local charid = players[source]
 	local amount = accountData[charid][account]
 
-	print(Query.UPDATE_ACCOUNT)
-	print(charid, account, amount)
-
 	MySQL.prepare(Query.UPDATE_ACCOUNT, { charid, account, amount })
 end
 provideExport('save', accounts.save)
@@ -116,7 +113,6 @@ function accounts.saveAll(source, remove)
 
 	if source then
 		local charid = players[source]
-		print('accounts', json.encode(accountData[charid]))
 
 		for account, amount in pairs(accountData[charid]) do
 			size += 1
@@ -127,17 +123,13 @@ function accounts.saveAll(source, remove)
 			accountData[source] = nil
 		end
 	else
-		print('allaccounts', json.encode(accountData))
 		for charid, data in pairs(accountData) do
-			print('accounts', json.encode(accountData[charid]))
 			for account, amount in pairs(data) do
 				size += 1
 				parameters[size] = { charid, account, amount }
 			end
 		end
 	end
-
-	print(json.encode(parameters))
 
 	if size > 0 then
 		MySQL.prepare(Query.UPDATE_ACCOUNT, parameters)
