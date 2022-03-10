@@ -18,9 +18,8 @@ local accountData = setmetatable({}, {
 })
 
 local Query = {
-	ACCOUNT_NAMES = 'SELECT UNIQUE name FROM accounts',
-	SELECT_ACCOUNTS = 'SELECT name, amount from accounts WHERE charid = ?',
-	UPDATE_ACCOUNT = 'INSERT INTO accounts (charid, name, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
+	SELECT_ACCOUNTS = 'SELECT name, amount from user_accounts WHERE charid = ?',
+	UPDATE_ACCOUNT = 'INSERT INTO user_accounts (charid, name, amount) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE amount = VALUES(amount)',
 }
 
 ---@param source number server id to identify the player

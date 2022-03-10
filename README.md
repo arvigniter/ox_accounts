@@ -1,33 +1,44 @@
-# Yet another WIP resource
-
+# ox_accounts
 Standalone resource to handle player currency ("accounts") such as bank accounts, tokens, cryptocurrency, etc.  
 Further logic needs to be implemented in any framework or resource utilising these accounts.  
 
-Resource can be loaded as a module directly into a framework if desired (this will be done for ox_core).
+Resource can be loaded as a module directly into a framework if desired.
 
-
-Accounts management resource with no hardcoded framework-dependence.  
-Can be integrated into a framework with imports, or kept standalone and called via exports.  
 
 ## Requirements
-- [OxMySQL](https://github.com/overextended/oxmysql)
+- [oxmysql](https://github.com/overextended/oxmysql)
 
 
-### Usage
+## Database
+Example table structure for ox_core and es_extended.  
+You will need to change the datatype for charid and the referenced column (characters.charid).
 
-Modify the following query where `YOUR_TABLE` matches your users table, and `YOUR_IDENTIFIER` is the column used to identitiy characters.  
-In ESX, this would be 'users' and 'identifier'.
+### ox_core
 ```sql
-CREATE TABLE `accounts` (
+CREATE TABLE IF NOT EXISTS `user_accounts` (
   `charid` int(11) NOT NULL,
   `name` varchar(50) NOT NULL,
-  `amount` int(11) NOT NULL,
-  UNIQUE KEY `name` (`name`,`charid`),
-  KEY `FK_accounts` (`charid`),
-  CONSTRAINT `accounts_ibfk_1` FOREIGN KEY (`charid`) REFERENCES `YOUR_TABLE` (`YOUR_IDENTIFIER`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `amount` int(11) NOT NULL DEFAULT 0,
+  UNIQUE KEY `name` (`name`,`charid`) USING BTREE,
+  KEY `FK_user_accounts_characters` (`charid`) USING BTREE,
+  CONSTRAINT `FK_user_accounts_characters` FOREIGN KEY (`charid`) REFERENCES `characters` (`charid`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 ```
 
+### es_extended
+```sql
+CREATE TABLE IF NOT EXISTS `user_accounts` (
+  `charid` varchar(60) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `amount` int(11) NOT NULL DEFAULT 0,
+  UNIQUE KEY `name` (`name`,`charid`) USING BTREE,
+  KEY `FK_user_accounts_characters` (`charid`) USING BTREE,
+  CONSTRAINT `FK_user_accounts_characters` FOREIGN KEY (`charid`) REFERENCES `users` (`identifier`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+
+## Usage
 Once character data has been loaded in your framework you should immediately load the account data as well.
 ```lua
 ---@param source number server id to identify the player
