@@ -136,6 +136,6 @@ function accounts.saveAll(source, remove)
 end
 provideExport('saveAll', accounts.saveAll)
 
-if server then
+if GetCurrentResourceName() == 'ox_core' then
 	server.accounts = accounts
 end
